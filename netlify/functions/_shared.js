@@ -56,7 +56,7 @@ async function callModel(messages, system, maxTokens = 1000) {
     },
     body: JSON.stringify({
       model: 'gpt-5.4-nano',
-      max_tokens: maxTokens,
+      max_completion_tokens: maxTokens,
       messages: [{ role: 'system', content: system }, ...messages],
     }),
   });
