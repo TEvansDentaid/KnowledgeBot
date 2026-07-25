@@ -58,6 +58,7 @@ ${knowledgeText || '(no knowledge has been added yet)'}`;
   try {
     raw = await callModel([{ role: 'user', content: question }], system);
   } catch (e) {
+    console.error('Chat function error:', e.message);
     return { statusCode: 502, body: JSON.stringify({ error: 'Assistant is unavailable right now' }) };
   }
 

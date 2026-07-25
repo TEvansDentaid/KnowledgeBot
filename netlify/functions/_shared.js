@@ -40,7 +40,10 @@ async function getEmbedding(text) {
     body: JSON.stringify({ model: 'text-embedding-3-small', input: text }),
   });
   const data = await response.json();
-  if (data.error) throw new Error(data.error.message);
+  if (data.error) {
+    console.error('OpenAI embedding error:', JSON.stringify(data.error));
+    throw new Error(data.error.message);
+  }
   return data.data[0].embedding;
 }
 
@@ -58,7 +61,10 @@ async function callModel(messages, system, maxTokens = 1000) {
     }),
   });
   const data = await response.json();
-  if (data.error) throw new Error(data.error.message);
+  if (data.error) {
+    console.error('OpenAI chat error:', JSON.stringify(data.error));
+    throw new Error(data.error.message);
+  }
   return data.choices[0].message.content;
 }
 

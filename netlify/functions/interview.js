@@ -43,6 +43,7 @@ reception directly, not online"). Leave it empty if nothing new and concrete was
   try {
     raw = await callModel(history.length ? history : [{ role: 'user', content: "Let's begin." }], system);
   } catch (e) {
+    console.error('Interview function error:', e.message);
     return { statusCode: 502, body: JSON.stringify({ error: 'Assistant is unavailable right now' }) };
   }
 
