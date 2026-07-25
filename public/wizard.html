@@ -63,13 +63,13 @@
       let logoUrl = currentBusiness.logo_url;
       if (logoFile) {
         const path = `${currentBusiness.id}/${logoFile.name}`;
-        const { error: uploadError } = await supabase.storage.from('logos').upload(path, logoFile, { upsert: true });
+        const { error: uploadError } = await supabaseClient.storage.from('logos').upload(path, logoFile, { upsert: true });
         if (!uploadError) {
-          logoUrl = supabase.storage.from('logos').getPublicUrl(path).data.publicUrl;
+          logoUrl = supabaseClient.storage.from('logos').getPublicUrl(path).data.publicUrl;
         }
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('businesses')
         .update({ primary_color: primaryColor, assistant_name: assistantName, message_limit: messageLimit, logo_url: logoUrl })
         .eq('id', currentBusiness.id);

@@ -60,7 +60,7 @@
     })();
 
     async function loadGaps() {
-      const { data: gaps } = await supabase
+      const { data: gaps } = await supabaseClient
         .from('knowledge_gaps')
         .select('*')
         .eq('business_id', currentBusiness.id)
@@ -77,7 +77,7 @@
         resolveBtn.className = 'secondary';
         resolveBtn.textContent = 'Mark resolved';
         resolveBtn.addEventListener('click', async () => {
-          await supabase.from('knowledge_gaps').update({ status: 'resolved' }).eq('id', gap.id);
+          await supabaseClient.from('knowledge_gaps').update({ status: 'resolved' }).eq('id', gap.id);
           loadGaps();
         });
         row.appendChild(resolveBtn);

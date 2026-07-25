@@ -31,8 +31,35 @@
     document.getElementById('signInBtn').addEventListener('click', async () => {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) { document.getElementById('signInError').textContent = error.message; return; }
+
+      // If this is a first login after confirming email, finish creating their business now.
+      const pendingName = localStorage.getItem('pendingBusinessName');
+      const { data: existingMembership } = await supabaseClient
+        .from('business_users')
+        .select('id')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+
+      if (!existingMembership && pendingName) {
+        const { data: business, error: bizError } = await supabaseClient
+          .from('businesses')
+          .insert({ name: pendingName })
+          .select()
+          .single();
+        if (bizError) { document.getElementById('signInError').textContent = bizError.message; return; }
+
+        await supabaseClient.from('business_users').insert({
+          business_id: business.id,
+          user_id: data.user.id,
+          role: 'owner',
+        });
+        localStorage.removeItem('pendingBusinessName');
+        window.location.href = '/wizard.html';
+        return;
+      }
+
       window.location.href = '/dashboard.html';
     });
 
@@ -43,24 +70,34 @@
       const errEl = document.getElementById('signUpError');
       if (!businessName.trim()) { errEl.textContent = 'Business name is required'; return; }
 
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({ email, password });
       if (signUpError) { errEl.textContent = signUpError.message; return; }
 
-      // Create the business record and link this user as its owner.
-      const { data: business, error: bizError } = await supabase
-        .from('businesses')
-        .insert({ name: businessName })
-        .select()
-        .single();
-      if (bizError) { errEl.textContent = bizError.message; return; }
+      // Confirmation is required before there's an active session, so we can't
+      // create the business record yet — save the name and finish this on their
+      // first successful sign-in instead.
+      localStorage.setItem('pendingBusinessName', businessName);
 
-      await supabase.from('business_users').insert({
-        business_id: business.id,
-        user_id: signUpData.user.id,
-        role: 'owner',
-      });
+      if (signUpData.session) {
+        // Confirmation is off for this project — session exists immediately.
+        const { data: business, error: bizError } = await supabaseClient
+          .from('businesses')
+          .insert({ name: businessName })
+          .select()
+          .single();
+        if (bizError) { errEl.textContent = bizError.message; return; }
 
-      window.location.href = '/wizard.html';
+        await supabaseClient.from('business_users').insert({
+          business_id: business.id,
+          user_id: signUpData.user.id,
+          role: 'owner',
+        });
+        localStorage.removeItem('pendingBusinessName');
+        window.location.href = '/wizard.html';
+        return;
+      }
+
+      errEl.textContent = 'Check your email to confirm your account, then sign in above to finish setup.';
     });
   </script>
 </body>
