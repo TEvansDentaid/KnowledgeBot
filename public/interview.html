@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interview</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <div class="page">
+    <div class="card" id="privacyNotice">
+      <p><strong>Heads up before you start.</strong></p>
+      <p class="muted">
+        Anything you share here may be visible to other people at your company who use this assistant.
+        Please don't include passwords, financial details, or information about sensitive or unannounced work —
+        stick to what you'd be comfortable with a colleague seeing.
+      </p>
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px">
+        <input type="checkbox" id="ackCheckbox" style="width:auto;margin:0">
+        I understand, let's start
+      </label>
+      <button id="startBtn" disabled>Start interview</button>
+    </div>
+
+    <div class="card" id="interviewCard" style="display:none">
+      <h2><span data-assistant-name></span> is asking about your role</h2>
+      <div id="messages" style="min-height:150px"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input id="answerInput" type="text" placeholder="Your answer">
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/supabaseClient.js"></script>
+  <script>
+    let sessionId = null;
+
+    (async () => {
+      await requireAuth();
+      const membership = await getMyBusiness();
+      if (!membership) { window.location.href = '/index.html'; return; }
+      applyBranding(membership.business);
+
+      if (membership.privacyAcknowledged) {
+        document.getElementById('privacyNotice').style.display = 'none';
+        showInterview();
+      }
+    })();
+
+    document.getElementById('ackCheckbox').addEventListener('change', (e) => {
+      document.getElementById('startBtn').disabled = !e.target.checked;
+    });
+
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.from('business_users').update({ privacy_acknowledged: true }).eq('user_id', user.id);
+      document.getElementById('privacyNotice').style.display = 'none';
+      showInterview();
+    });
+
+    async function showInterview() {
+      document.getElementById('interviewCard').style.display = 'block';
+      await sendToInterview(null);
+    }
+
+    function addBubble(text, role) {
+      const el = document.createElement('div');
+      el.className = `chat-bubble ${role}`;
+      el.textContent = text;
+      document.getElementById('messages').appendChild(el);
+    }
+
+    async function sendToInterview(userMessage) {
+      if (userMessage) addBubble(userMessage, 'user');
+      const result = await callFunction('interview', { sessionId, userMessage });
+      if (result.error) { addBubble(result.error, 'assistant'); return; }
+      sessionId = result.sessionId;
+      addBubble(result.reply, 'assistant');
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      const input = document.getElementById('answerInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      sendToInterview(text);
+    });
+
+    document.getElementById('answerInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('sendBtn').click();
+    });
+  </script>
+</body>
+</html>

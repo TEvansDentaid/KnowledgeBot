@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Set up your assistant</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <p class="badge">Step 1 of 2</p>
+      <h1>Set up your assistant</h1>
+
+      <label class="muted">Logo</label>
+      <input id="logoFile" type="file" accept="image/*">
+
+      <label class="muted">Brand colour</label>
+      <input id="primaryColor" type="color" value="#0F6E56">
+
+      <label class="muted">Assistant name</label>
+      <input id="assistantName" type="text" value="Bert">
+
+      <label class="muted">Message limit for this period</label>
+      <input id="messageLimit" type="number" value="100">
+
+      <button id="saveBrandingBtn">Save and continue</button>
+      <p class="muted" id="brandingMsg"></p>
+    </div>
+
+    <div class="card" id="inviteCard" style="display:none">
+      <p class="badge">Step 2 of 2</p>
+      <h2>Invite your team</h2>
+      <p class="muted">Add colleagues now, or skip and do this later from the dashboard.</p>
+      <input id="inviteEmail" type="email" placeholder="name@company.com">
+      <select id="inviteRole">
+        <option value="user">User — chat only</option>
+        <option value="developer">Developer — can manage the knowledge base</option>
+      </select>
+      <button id="inviteBtn" class="secondary">Add teammate</button>
+      <div id="inviteList" style="margin-top:12px"></div>
+      <button id="finishBtn" style="margin-top:16px">Go to dashboard</button>
+    </div>
+  </div>
+
+  <script src="/js/supabaseClient.js"></script>
+  <script>
+    let currentBusiness = null;
+
+    (async () => {
+      await requireAuth();
+      const membership = await getMyBusiness();
+      if (!membership) { window.location.href = '/index.html'; return; }
+      currentBusiness = membership.business;
+    })();
+
+    document.getElementById('saveBrandingBtn').addEventListener('click', async () => {
+      const primaryColor = document.getElementById('primaryColor').value;
+      const assistantName = document.getElementById('assistantName').value || 'Bert';
+      const messageLimit = parseInt(document.getElementById('messageLimit').value, 10) || 100;
+      const logoFile = document.getElementById('logoFile').files[0];
+
+      let logoUrl = currentBusiness.logo_url;
+      if (logoFile) {
+        const path = `${currentBusiness.id}/${logoFile.name}`;
+        const { error: uploadError } = await supabase.storage.from('logos').upload(path, logoFile, { upsert: true });
+        if (!uploadError) {
+          logoUrl = supabase.storage.from('logos').getPublicUrl(path).data.publicUrl;
+        }
+      }
+
+      const { error } = await supabase
+        .from('businesses')
+        .update({ primary_color: primaryColor, assistant_name: assistantName, message_limit: messageLimit, logo_url: logoUrl })
+        .eq('id', currentBusiness.id);
+
+      const msgEl = document.getElementById('brandingMsg');
+      if (error) { msgEl.textContent = error.message; return; }
+      msgEl.textContent = 'Saved.';
+      document.getElementById('inviteCard').style.display = 'block';
+    });
+
+    document.getElementById('inviteBtn').addEventListener('click', async () => {
+      const email = document.getElementById('inviteEmail').value;
+      const role = document.getElementById('inviteRole').value;
+      if (!email.trim()) return;
+
+      const result = await callFunction('invite-user', { email, role });
+      const listEl = document.getElementById('inviteList');
+      const row = document.createElement('div');
+      row.className = 'muted';
+      row.textContent = result.error ? (email + ' — ' + result.error) : (email + ' — ' + role + ' (invited)');
+      listEl.appendChild(row);
+      document.getElementById('inviteEmail').value = '';
+    });
+
+    document.getElementById('finishBtn').addEventListener('click', () => {
+      window.location.href = '/dashboard.html';
+    });
+  </script>
+</body>
+</html>

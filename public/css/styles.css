@@ -1,0 +1,102 @@
+:root {
+  --brand-primary: #0F6E56;
+  --brand-secondary: #BA7517;
+  --bg: #F7F5F0;
+  --surface: #FFFFFF;
+  --text-primary: #1B2430;
+  --text-secondary: #5B6472;
+  --border: #E3E0D8;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Inter, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+h1, h2, h3 { margin: 0 0 0.75rem; }
+
+input, select, button, textarea {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+input, select, textarea { width: 100%; margin-bottom: 10px; }
+
+button {
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+button:hover { opacity: 0.9; }
+
+.muted { color: var(--text-secondary); font-size: 13px; }
+
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: #FAEEDA;
+  color: #854F0B;
+}
+
+.chat-bubble {
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  max-width: 80%;
+  font-size: 14px;
+}
+
+.chat-bubble.user {
+  background: var(--brand-primary);
+  color: white;
+  margin-left: auto;
+}
+
+.chat-bubble.assistant {
+  background: #F1EFE8;
+  color: var(--text-primary);
+}
+
+.gap-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}

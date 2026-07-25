@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <img data-logo src="" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;display:none" onload="this.style.display='block'">
+        <div>
+          <strong data-assistant-name></strong>
+          <p class="muted" style="margin:0" data-business-name></p>
+        </div>
+      </div>
+      <div id="messages" style="min-height:200px"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input id="questionInput" type="text" placeholder="Ask a question">
+        <button id="sendBtn">Send</button>
+      </div>
+      <p class="muted" id="usageText" style="margin-top:8px"></p>
+    </div>
+  </div>
+
+  <script src="/js/supabaseClient.js"></script>
+  <script>
+    (async () => {
+      await requireAuth();
+      const membership = await getMyBusiness();
+      if (!membership) { window.location.href = '/index.html'; return; }
+      applyBranding(membership.business);
+      document.getElementById('usageText').textContent =
+        `${membership.business.messages_used} of ${membership.business.message_limit} messages used this period`;
+    })();
+
+    function addBubble(text, role) {
+      const el = document.createElement('div');
+      el.className = `chat-bubble ${role}`;
+      el.textContent = text;
+      document.getElementById('messages').appendChild(el);
+    }
+
+    async function send() {
+      const input = document.getElementById('questionInput');
+      const question = input.value.trim();
+      if (!question) return;
+      addBubble(question, 'user');
+      input.value = '';
+
+      const result = await callFunction('chat', { question });
+      if (result.error) {
+        addBubble(result.error, 'assistant');
+        return;
+      }
+      addBubble(result.answer, 'assistant');
+      document.getElementById('usageText').textContent = `${result.messagesUsed} of ${result.messageLimit} messages used this period`;
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', send);
+    document.getElementById('questionInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') send();
+    });
+  </script>
+</body>
+</html>
